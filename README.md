@@ -38,6 +38,6 @@ NOTES
 and 245, treat detect/1 output 'latin1' only as the input list passed all the <br/>
 Latin-1 tests and do not discard the possibility to have an UTF-8 sequence which<br/>
 may coincide with a Latin-1 sequence.<br/>
-2. Remember, this is just a rudimentary check which I hope to help the Erlang<br/>
-users until something better appear.
+2. Remember, this is just a rudimentary check which I hope will help the Erlang<br/>
+users until something better appears.
 
