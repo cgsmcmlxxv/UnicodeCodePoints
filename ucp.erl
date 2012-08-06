@@ -2,7 +2,7 @@
 %% Project: UnicodeCodePoints
 %% File: ucp.erl
 %% Description: A simple detection of and conversion in between
-%%              Latin-1 amd UTF-8 encodings
+%%              Unicode code points and UTF-8 encoding
 %% Author: CGSMCMLXXV <cgsmcmlxxv@gmail.com>
 %% Copyright: 2012 CGSMCMLXXV
 %% License: GNU GPL3 (if something else is needed, drop an e-mail)
@@ -21,10 +21,10 @@ test([],true,true,_) ->
     mixed;
 
 test([],true,false,_) ->
-    latin1;
+    utf8;
 
 test([],false,true,_) ->
-    utf8;
+    ucp;
 
 test([],false,false,true) ->
     either;
@@ -137,41 +137,41 @@ test_three_bytes(H,[H1,H2,H3|T],UCP,UTF8) ->
             end
     end.
 
-from_utf8(L)
-when is_list(L) ->
-    lists:reverse(from_utf8(lists:reverse(L),[])).
-
-from_utf8([],[]) ->
-    [];
-
-from_utf8([H|T],[])
-when is_integer(H) ->
-    case H of
-        I when I == 0 -> [128|from_utf8(T,[192])];
-        I when I > 0, I < 128 -> [H|from_utf8(T,[])];
-        I when I > 127, I < 2048 -> [128 + (H rem 64)|from_utf8(T,[192 + (H bsr 6)])];
-        I when I > 2047, I < 56448 -> [128 + (H rem 64)|from_utf8(T,[128 + ((H bsr 6) rem 64),224 + (H bsr 12)])];
-        I when I > 56575, I < 65536 -> [128 + (H rem 64)|from_utf8(T,[128 + ((H bsr 6) rem 64),224 + (H bsr 12)])];
-        I when I > 65535, I < 2097152 -> [128 + (H rem 64)|from_utf8(T,[128 + ((H bsr 6) rem 64),240 + ((H bsr 12) rem 64),192 + (H bsr 18)])]
-    end;
-
-from_utf8(L,[H]) ->
-    [H|from_utf8(L,[])];
-
-from_utf8(L,[H|T]) ->
-    [H|from_utf8(L,T)].
-
 to_utf8(L)
 when is_list(L) ->
-    to_utf8_1(L).
+    lists:reverse(to_utf8(lists:reverse(L),[])).
 
-to_utf8_1([]) ->
+to_utf8([],[]) ->
     [];
 
-to_utf8_1([H|T])
+to_utf8([H|T],[])
 when is_integer(H) ->
     case H of
-        I when I > 0, I < 128 -> [H|to_utf8_1(T)];
+        I when I == 0 -> [128|to_utf8(T,[192])];
+        I when I > 0, I < 128 -> [H|to_utf8(T,[])];
+        I when I > 127, I < 2048 -> [128 + (H rem 64)|to_utf8(T,[192 + (H bsr 6)])];
+        I when I > 2047, I < 56448 -> [128 + (H rem 64)|to_utf8(T,[128 + ((H bsr 6) rem 64),224 + (H bsr 12)])];
+        I when I > 56575, I < 65536 -> [128 + (H rem 64)|to_utf8(T,[128 + ((H bsr 6) rem 64),224 + (H bsr 12)])];
+        I when I > 65535, I < 2097152 -> [128 + (H rem 64)|to_utf8(T,[128 + ((H bsr 6) rem 64),240 + ((H bsr 12) rem 64),192 + (H bsr 18)])]
+    end;
+
+to_utf8(L,[H]) ->
+    [H|to_utf8(L,[])];
+
+to_utf8(L,[H|T]) ->
+    [H|to_utf8(L,T)].
+
+from_utf8(L)
+when is_list(L) ->
+    from_utf8_1(L).
+
+from_utf8_1([]) ->
+    [];
+
+from_utf8_1([H|T])
+when is_integer(H) ->
+    case H of
+        I when I > 0, I < 128 -> [H|from_utf8_1(T)];
         I when I == 192 -> check_for_zero([H|T]);
         I when I > 193, I < 224 -> two_bytes([H|T]);
         I when I > 223, I < 240 -> three_bytes([H|T]);
@@ -180,12 +180,12 @@ when is_integer(H) ->
 
 check_for_zero([_,H2|T])
 when H2 == 128 ->
-    [0|to_utf8_1(T)].
+    [0|from_utf8_1(T)].
 
 two_bytes([H1,H2|T])
 when H2 > 127,
      H2 < 192 ->
-    [((H1 - 192) bsl 6) + H2 - 128|to_utf8_1(T)].
+    [((H1 - 192) bsl 6) + H2 - 128|from_utf8_1(T)].
 
 three_bytes([H1,H2,H3|T])
 when H1 == 224,
@@ -193,7 +193,7 @@ when H1 == 224,
      H2 <192,
      H3 > 127,
      H3 < 192 ->
-    [((H1 - 224) bsl 12) + ((H2 - 128) bsl 6) + H3 - 128|to_utf8_1(T)];
+    [((H1 - 224) bsl 12) + ((H2 - 128) bsl 6) + H3 - 128|from_utf8_1(T)];
 
 three_bytes([H1,H2,H3|T])
 when H1 > 224,
@@ -202,7 +202,7 @@ when H1 > 224,
      H2 < 192,
      H3 > 127,
      H3 < 192 ->
-    [((H1 - 224) bsl 12) + ((H2 - 128) bsl 6) + H3 - 128|to_utf8_1(T)];
+    [((H1 - 224) bsl 12) + ((H2 - 128) bsl 6) + H3 - 128|from_utf8_1(T)];
 
 three_bytes([H1,H2,H3|T])
 when H1 == 237,
@@ -210,7 +210,7 @@ when H1 == 237,
      H2 < 178,
      H3 > 127,
      H3 < 192 ->
-    [((H1 - 224) bsl 12) + ((H2 - 128) bsl 6) + H3 - 128|to_utf8_1(T)];
+    [((H1 - 224) bsl 12) + ((H2 - 128) bsl 6) + H3 - 128|from_utf8_1(T)];
 
 three_bytes([H1,H2,H3|T])
 when H1 == 237,
@@ -218,7 +218,7 @@ when H1 == 237,
      H2 < 192,
      H3 > 127,
      H3 < 192 ->
-    [((H1 - 224) bsl 12) + ((H2 - 128) bsl 6) + H3 - 128|to_utf8_1(T)];
+    [((H1 - 224) bsl 12) + ((H2 - 128) bsl 6) + H3 - 128|from_utf8_1(T)];
 
 three_bytes([H1,H2,H3|T])
 when H1 > 237,
@@ -227,7 +227,7 @@ when H1 > 237,
      H2 < 192,
      H3 > 127,
      H3 < 192 ->
-    [((H1 - 224) bsl 12) + ((H2 - 128) bsl 6) + H3 - 128|to_utf8_1(T)].
+    [((H1 - 224) bsl 12) + ((H2 - 128) bsl 6) + H3 - 128|from_utf8_1(T)].
 
 four_bytes([H1,H2,H3,H4|T])
 when H1 == 240,
@@ -237,7 +237,7 @@ when H1 == 240,
      H3 < 192,
      H4 > 127,
      H4 < 192 ->
-    [((H1 - 240) bsl 18) + ((H2 - 128) bsl 12) + ((H3 - 128) bsl 6) + H4 - 128 |to_utf8_1(T)];
+    [((H1 - 240) bsl 18) + ((H2 - 128) bsl 12) + ((H3 - 128) bsl 6) + H4 - 128 |from_utf8_1(T)];
 
 four_bytes([H1,H2,H3,H4|T])
 when H1 > 240,
@@ -248,7 +248,7 @@ when H1 > 240,
      H3 < 192,
      H4 > 127,
      H4 < 192 ->
-    [((H1 - 240) bsl 18) + ((H2 - 128) bsl 12) + ((H3 - 128) bsl 6) + H4 - 128 |to_utf8_1(T)].
+    [((H1 - 240) bsl 18) + ((H2 - 128) bsl 12) + ((H3 - 128) bsl 6) + H4 - 128 |from_utf8_1(T)].
 
 
 

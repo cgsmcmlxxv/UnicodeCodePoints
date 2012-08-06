@@ -1,7 +1,7 @@
 UnicodeCodePoints
 =================
 
-Latin-1 rudimentary conversion to and from UTF-8.
+Unicode code points rudimentary conversion to and from UTF-8.
 
 Implementation based on http://en.wikipedia.org/wiki/UTF-8 (Modified UTF-8).
 
@@ -15,29 +15,32 @@ detect/1:
 - accepts plain list of integers<br/>
 - checks against Unicode codepoints<br/>
 - returns one of the following atoms<br/>
----> 'unknown': failed both Latin-1 and UTF-8 tests<br/>
+---> 'unknown': failed both UCP and UTF-8 tests<br/>
 ---> 'either': all the integers are less 128, but larger than 1<br/>
----> 'latin1': all Latin-1 tests passed, no UTF-8 specific integers detected<br/>
----> 'utf8': all UTF-8 tests passed, no Latin-1 sequence found<br/>
----> 'mixed': found a mix between Latin-1 sequences and UTF-8 specific integers
+---> 'utf8': all UTF-8 sequence tests passed, no UCP specific integers detected<br/>
+---> 'ucp': all UCP tests passed, no UTF-8 sequence found<br/>
+---> 'mixed': found a mix between UTF-8 sequences and UCP specific integers
 
 to_utf8/1:
 
-- accepts Latin-1 list of integers<br/>
-- returns UTF-8 list or crashes if the input is not a correct Latin-1 list
+- accepts UCP list of integers<br/>
+- returns UTF-8 encoded list or crashes if the input is not a correct UCP list
 
 from_utf8/1
 
 - accepts UTF-8 list of integers<br/>
-- returns Latin-1 list or crashes if the input is not a correct UTF-8 list
+- returns UCP list or crashes if the input is not a correct UTF-8 list
 
 NOTES
 =====
 
-1. Due to the overlap in between Latin-1 and UTF-8 for integers in between 128<br/>
-and 245, treat detect/1 output 'latin1' only as the input list passed all the <br/>
-Latin-1 tests and do not discard the possibility to have an UTF-8 sequence which<br/>
-may coincide with a Latin-1 sequence.<br/>
-2. Remember, this is just a rudimentary check which I hope will help the Erlang<br/>
-users until something better appears.
+1. UCP/ucp = Unicode code points.<br/>
+2. UTF-8 is using a sequence of bytes to encode the UCP's in that region. That<br/>
+doesn't mean that it cannot be a simple coincidence (pretty nasty one though)<br/>
+with a sequence of UCP's in the region of Latin-1.
+3. This module intention is not to overlap with unicode module from Erlang, but<br/>
+to allow the users to have control over their lists denoting some strings.<br/>
+Erlang in this moment is relying on the environment to extract the integers for<br/>
+the string-list and that makes unicode unreliable for the moment. The issue is<br/>
+known and it will be fixed soon (hopefully).
 
